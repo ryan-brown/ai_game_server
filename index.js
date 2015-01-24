@@ -1,4 +1,9 @@
-var http = require('http');
+var http = require('http')
+  , fs = require('fs')
+  , querystring = require('querystring')
+  , nedb = require('nedb')
+  , db = new nedb({ filename: 'data.db', autoload: true })
+  , mustache = require('mustache');
 
 // Action
 /////////
@@ -8,9 +13,17 @@ var Action = (function() {
     this.func = func;
   };
 
-  Action.prototype.render = function(text) {
-    this.response.writeHead(200, {'Content-Type': 'text/plain'});
-    this.response.end(text);
+  Action.prototype.render = function(file) {
+    var self = this;
+    fs.readFile(file, 'utf8', function (error, text) {
+      if (error) {
+        self.response.writeHead(500, {'Content-Type': 'text/plain'});
+        self.response.end("readFile: " + error);
+      } else {
+        self.response.writeHead(200, {'Content-Type': 'text/html'});
+        self.response.end(mustache.render(text));
+      }
+    });
   };
 
   Action.prototype.call = function(request, response) {
@@ -33,6 +46,8 @@ var Router = (function() {
   };
 
   Router.prototype.route = function(request, response) {
+    console.log(request.method + " " + request.url);
+
     if (_routes[request.url]) {
       return _routes[request.url].call(request, response);
     } else {
@@ -41,7 +56,7 @@ var Router = (function() {
   };
 
   Router.prototype.error = new Action(function() {
-    this.render("Routing error.\n");
+    this.render("./views/404.html");
   });
 
   return Router;
@@ -51,16 +66,42 @@ var Router = (function() {
 /////////
 
 home = new Action(function() {
-  this.render("Home page.\n");
+  this.render("./views/home.html");
 });
 
-rules = new Action(function() {
-  this.render("Rules page.\n");
+code = new Action(function() {
+  var self = this;
+
+  if (this.request.method == "POST") {
+    var body = "";
+    this.request.on("data", function(chunk) {
+      body = body + chunk;
+    });
+
+    this.request.on("end", function() {
+      db.insert(querystring.parse(body));
+      self.response.writeHead(302, { 'Location': '/db' });
+      self.response.end();
+    });
+  } else {
+    self.response.writeHead(302, { 'Location': '/db' });
+    self.response.end();
+  }
+});
+
+database = new Action(function() {
+  var self = this;
+
+  db.find({}, function (err, docs) {
+    self.response.writeHead(200, {'Content-Type': 'text/plain'});
+    self.response.end(JSON.stringify(docs));
+  });
 });
 
 var router = new Router({
   "/" : home,
-  "/rules" : rules,
+  "/code" : code,
+  "/db" : database,
 });
 
 http.createServer(function (request, response) {
