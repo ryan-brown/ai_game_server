@@ -3,8 +3,13 @@ var http = require("http")
   , nedb = require("nedb")
   , db = new nedb({ filename: "data.db", autoload: true });
 
+var game = require("./ai_game_engine/engine");
+
 var router = require("./lib/router")
   , action = require("./lib/action")
+
+// Dev tools.
+require('locus');
 
 // App Actions
 //////////////
@@ -42,6 +47,12 @@ code = new action(function() {
   });
 });
 
+// GET /run
+run = new action(function() {
+  // Play around in the terminal.
+  eval(locus);
+});
+
 // GET /db
 database = new action(function() {
   var self = this;
@@ -56,6 +67,7 @@ database = new action(function() {
 var router = new router({
   "GET /"      : home,
   "POST /code" : code,
+  "GET /run"   : run,
   "GET /db"    : database,
 });
 

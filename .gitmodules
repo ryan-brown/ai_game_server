@@ -1,0 +1,3 @@
+[submodule "ai_game_engine"]
+	path = ai_game_engine
+	url = git@github.com:ryan-brown/ai_game_engine.git
