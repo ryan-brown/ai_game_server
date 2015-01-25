@@ -6,7 +6,7 @@ var http = require("http")
 var game = require("./ai_game_engine/engine");
 
 var router = require("./lib/router")
-  , action = require("./lib/action")
+  , action = require("./lib/action");
 
 // Dev tools.
 require('locus');
@@ -19,14 +19,17 @@ var home = new action(function() {
   this.render("./views/home.html");
 });
 
+// GET /rules
 var rules = new action(function() {
   this.render("./views/rules.html");
 });
 
+// GET /submit
 var submit = new action(function() {
   this.render("./views/submit.html");
 });
 
+// GET /games
 var games = new action(function() {
   this.render("./views/games.html");
 });
@@ -44,17 +47,18 @@ code = new action(function() {
     var data = querystring.parse(body);
 
     try {
-      eval(data.code);
-      db.insert({ username : data.player, code : data.code });
-      // Redirect to /db route.
-      self.response.writeHead(302, { "Location": "/db" });
-      self.response.end();
+      if (!data.code) {
+        throw new Error() ;
+      }
+      var dummyGame = new game();
+      dummyGame.evalPlayerCode(data.code);
+      db.insert({ code : data.code });
+      self.response.writeHead(200, { "Content-Type" : "application/json" });
+      self.response.end("{ message : \"Success.\" }");
     }
     catch(err) {
-      console.log(err);
-      // Redirect to / route.
-      self.response.writeHead(302, { "Location": "/" });
-      self.response.end();
+      self.response.writeHead(400, { "Content-Type" : "application/json" });
+      self.response.end("{ message : " + err + " }");
     }
   });
 });
