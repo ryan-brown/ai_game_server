@@ -18,21 +18,28 @@ home = new action(function() {
 code = new action(function() {
   var self = this;
 
-  if (this.request.method == "POST") {
-    var body = "";
-    this.request.on("data", function(chunk) {
-      body = body + chunk;
-    });
+  var body = "";
+  this.request.on("data", function(chunk) {
+    body += chunk;
+  });
 
-    this.request.on("end", function() {
-      db.insert(querystring.parse(body));
+  this.request.on("end", function() {
+    var data = querystring.parse(body);
+
+    try {
+      eval(data.code);
+      db.insert({ username : data.player, code : data.code });
+      // Redirect to /db route.
       self.response.writeHead(302, { "Location": "/db" });
       self.response.end();
-    });
-  } else {
-    self.response.writeHead(302, { "Location": "/db" });
-    self.response.end();
-  }
+    }
+    catch(err) {
+      console.log(err);
+      // Redirect to / route.
+      self.response.writeHead(302, { "Location": "/" });
+      self.response.end();
+    }
+  });
 });
 
 // GET /db
@@ -47,9 +54,9 @@ database = new action(function() {
 
 // Routes.
 var router = new router({
-  "/"     : home,
-  "/code" : code,
-  "/db"   : database,
+  "GET /"      : home,
+  "POST /code" : code,
+  "GET /db"    : database,
 });
 
 // Server
