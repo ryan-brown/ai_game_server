@@ -15,8 +15,20 @@ require('locus');
 //////////////
 
 // GET /
-home = new action(function() {
+var home = new action(function() {
   this.render("./views/home.html");
+});
+
+var rules = new action(function() {
+  this.render("./views/rules.html");
+});
+
+var submit = new action(function() {
+  this.render("./views/submit.html");
+});
+
+var games = new action(function() {
+  this.render("./views/games.html");
 });
 
 // POST /code
@@ -65,10 +77,12 @@ database = new action(function() {
 
 // Routes.
 var router = new router({
-  "GET /"      : home,
-  "POST /code" : code,
-  "GET /run"   : run,
-  "GET /db"    : database,
+  "GET /"       : home,
+  "GET /rules"  : rules,
+  "GET /submit" : submit,
+  "GET /games"  : games,
+  "POST /code"  : code,
+  "POST /run"   : run,
 });
 
 // Server
